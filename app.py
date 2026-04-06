@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from src.helper import download_huggingfaceembedding
-from langchain.vectorstores import Pinecone
-import pinecone
+from langchain.vectorstores import Pinecone as LangchainPinecone
+from pinecone import Pinecone
 from dotenv import load_dotenv
 from langchain.llms import CTransformers
 from langchain.prompts import PromptTemplate
@@ -18,12 +18,21 @@ PINECONE_API_ENV = os.environ.get("PINECONE_API_ENV")
 
 embedding = download_huggingfaceembedding()
 
-pinecone.init(api_key=PINECONE_API_KEY,
-              environment=PINECONE_API_ENV)
-
+pc = Pinecone(api_key=PINECONE_API_KEY)
 index_name="ramayan"
 
-docsearch = Pinecone.from_existing_index(index_name=index_name, embedding=embedding)
+# Vérifie si l’index existe
+if index_name not in pc.list_indexes().names():
+    pc.create_index(
+        name=index_name,
+        dimension=1536,  # dimension de ton embedding
+        metric="cosine",
+        spec=ServerlessSpec(cloud="aws", region="us-east-1")  # région par défaut
+    )
+
+index = pc.Index(index_name)
+
+docsearch = LangchainPinecone.from_existing_index(index_name=index_name, embedding=embedding)
 
 PROMPT = PromptTemplate(template=prompt_template, input_variables=["context","question"])
 chain_type_kwargs = {"prompt":PROMPT}

@@ -1,6 +1,6 @@
 ctransformers==0.2.5
-sentence-transformers==2.2.2
-pinecone-client
+sentence-transformers>=2.6.0
+pinecone
 langchain==0.0.225
 flask
 pypdf
